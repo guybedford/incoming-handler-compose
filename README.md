@@ -2,10 +2,20 @@
 
 Tries to create a composed incoming handler.
 
-Firstly, we have a hello world server at:
+Firstly, we have a hello world server.
+
+Building Wasmtime exactly at https://github.com/bytecodealliance/wasmtime/commit/4b288ba88dfe1c2cce720c46bf9d919e54871c61 (before Resources which ComponentizeJS does not support):
+
+With Wasmtime built via:
 
 ```
-wasmtime serve wasi_http_proxy_tests.wasm
+cargo build --features serve --release
+```
+
+Then:
+
+```
+./target/release/wasmtime serve wasi_http_proxy_tests.wasm
 ```
 
 where `curl http://localhost:8080` returns `"hello world"`.
