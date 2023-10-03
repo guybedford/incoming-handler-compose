@@ -1,48 +1,41 @@
-### Incoming Handler Composer
+### Incoming Handler Component
 
-Tries to create a composed incoming handler.
-
-Firstly, we have a hello world server at:
-
-```
-wasmtime serve wasi_http_proxy_tests.wasm
-```
-
-where `curl http://localhost:8080` returns `"hello world"`.
-
-We then try to compose this incoming handler with a ComponentizeJS incoming handler:
+Incoming handler in JS with ComponentizeJS.
 
 ```
 git clone https://github.com/guybedford/incoming-handler-compose
 cd incoming-handler-compose
 npm install
 node build.js
-wasm-tools compose component.wasm -d wasi_http_proxy_tests.wasm -o composed.wasm
 ```
 
-where `build.js` contains the JS "wrapper" component:
+Should output `Created component.wasm`.
+
+```
+wasmtime serve component.wasm
+```
+
+Should then work.
+
+`build.js` contains the JS "handler" component:
 
 ```js
-import { handle } from 'wasi:http/incoming-handler';
+  import { newFields, newOutgoingResponse, outgoingResponseWrite, setResponseOutparam, outgoingBodyWrite, outgoingBodyFinish } from 'wasi:http/types';
+  import { blockingWriteAndFlush, dropOutputStream } from 'wasi:io/streams';
 
-export const incomingHandler = {
-  handle (incomingRequest, outgoingResponse) {
-    handle(incomingRequest, outgoingResponse);
-  }
-};
+  export const incomingHandler = {
+    handle (req, res) {
+      console.log('HANDLE');
+      const headers = newFields([]);
+      const response = newOutgoingResponse(200, headers);
+      const body = outgoingResponseWrite(response);
+      setResponseOutparam(res, { tag: 'ok', value: response });
+      const out = outgoingBodyWrite(body);
+      blockingWriteAndFlush(out, "hello world");
+      dropOutputStream(out);
+      outgoingBodyFinish(body);
+    }
+  };
 ```
 
-In theory this composed component should just execute the same?
-
-```
-wasmtime serve composed.wasm
-```
-
-Seems to work? But curling fails -
-
-```
-curl http://localhost:8080
-curl: (7) Failed to connect to localhost port 8080 after 4 ms: Couldn't connect to server
-```
-
-Meanthile the Wasmtime process seems to stall.
+Supporting the `console.log()` as writing to the stdout would help in debugging...
