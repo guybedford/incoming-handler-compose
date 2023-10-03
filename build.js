@@ -2,17 +2,27 @@ import { componentize } from '@bytecodealliance/componentize-js';
 import { writeFile } from 'node:fs/promises';
 
 const { component } = await componentize(`
-  import { handle } from 'wasi:http/incoming-handler';
+  import { newFields, newOutgoingResponse, outgoingResponseWrite, setResponseOutparam, outgoingBodyWrite, outgoingBodyFinish } from 'wasi:http/types';
+  import { blockingWriteAndFlush, dropOutputStream } from 'wasi:io/streams';
 
   export const incomingHandler = {
-    handle (incomingRequest, outgoingResponse) {
-      handle(incomingRequest, outgoingResponse);
+    handle (req, res) {
+      console.log('HANDLE');
+      const headers = newFields([]);
+      const response = newOutgoingResponse(200, headers);
+      const body = outgoingResponseWrite(response);
+      setResponseOutparam(res, { tag: 'ok', value: response });
+      const out = outgoingBodyWrite(body);
+      blockingWriteAndFlush(out, "hello world");
+      dropOutputStream(out);
+      outgoingBodyFinish(body);
     }
   };
 `, {
   witPath: 'wit',
-  worldName: 'test-incoming-hook',
+  worldName: 'wasi:http/proxy',
   preview2Adapter: 'wasi_snapshot_preview1.wasm',
+  enableStdout: true,
 });
 
 await writeFile('component.wasm', component);
