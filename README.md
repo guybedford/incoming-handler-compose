@@ -11,8 +11,18 @@ node build.js
 
 Should output `Created component.wasm`.
 
+Building Wasmtime exactly at https://github.com/bytecodealliance/wasmtime/commit/4b288ba88dfe1c2cce720c46bf9d919e54871c61 (before Resources which ComponentizeJS does not support):
+
+With Wasmtime built via:
+
 ```
-wasmtime serve component.wasm
+cargo build --features serve --release
+```
+
+Then:
+
+```
+./target/release/wasmtime serve component.wasm
 ```
 
 Should then work.
